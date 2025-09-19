@@ -2,28 +2,33 @@ pipeline {
     agent any
 
     stages {
-        stage('Clone Code') {
+        stage('Clone Repo') {
             steps {
                 git 'https://github.com/saisuma18/Sample.git'
             }
         }
 
-        stage('Build Docker Image') {
+        stage('Build Docker Image Locally') {
             steps {
-                script {
-                    dockerImage = docker.build("Sample")
-                }
+                sh 'docker build -t Sample .'
             }
         }
 
-        stage('Run Docker Container') {
+        stage('Deploy to Remote EC2') {
             steps {
-                script {
-                    // Stop any old container
-                    sh "docker stop calculator || true"
-                    sh "docker rm calculator || true"
-                    // Run new container
-                    dockerImage.run("-d -p 8080:80 --name calculator")
+                sshagent(['your-ssh-key-id']) {
+                    sh '''
+                    ssh -o StrictHostKeyChecking=no ec2-user@<APP_EC2_PUBLIC_IP> '
+                        docker stop calculator || true &&
+                        docker rm calculator || true &&
+                        docker rmi Sample || true &&
+                        cd /home/ec2-user &&
+                        git clone https://github.com/saisuma18/Sample.git || true &&
+                        cd Sample &&
+                        docker build -t Sample . &&
+                        docker run -d -p 8080:80 --name calculator Sample
+                    '
+                    '''
                 }
             }
         }
