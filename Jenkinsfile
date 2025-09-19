@@ -16,9 +16,9 @@ pipeline {
 
         stage('Deploy to Remote EC2') {
             steps {
-                sshagent(['your-ssh-key-id']) {
+                sshagent(['Jenkins1']) {
                     sh '''
-                    ssh -o StrictHostKeyChecking=no ec2-user@<APP_EC2_PUBLIC_IP> '
+                    ssh -o StrictHostKeyChecking=no ec2-user@13.200.226.125 '
                         docker stop calculator || true &&
                         docker rm calculator || true &&
                         docker rmi Sample || true &&
